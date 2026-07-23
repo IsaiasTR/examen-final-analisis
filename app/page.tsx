@@ -1,65 +1,346 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+
+  const router = useRouter()
+
+  const [dni, setDni] = useState('')
+  const [alumno, setAlumno] = useState<any>(null)
+  const [comision, setComision] = useState<any>(null)
+  const [docente, setDocente] = useState<any>(null)
+  const [nota, setNota] = useState<any>(null)
+  const [habilitado, setHabilitado] = useState(false)
+
+  const continuar = async () => {
+
+    if(dni.trim() === ''){
+      alert('Ingrese su DNI')
+      return
+    }
+
+    setAlumno(null)
+    setComision(null)
+    setDocente(null)
+    setNota(null)
+    setHabilitado(false)
+
+    // Buscar alumno
+    const { data: alumnoData, error } = await supabase
+      .from('alumnos')
+      .select('*')
+      .eq('dni', dni)
+      .single()
+
+    if(error || !alumnoData){
+      alert('No existe un alumno con ese DNI')
+      return
+    }
+
+
+// Verificar si ya rindió el examen final
+
+const { data: examenExistente, error: errorExamen } = await supabase
+  .from('examenes_finales')
+  .select('id, nota')
+  .eq('alumno_id', alumnoData.id)
+  .maybeSingle()
+
+
+if(errorExamen){
+
+  console.log(errorExamen)
+
+  alert('No se pudo verificar el estado del examen.')
+  return
+
+}
+
+
+if(examenExistente){
+
+  alert(
+    'Usted ya rindió el examen final.\n\nNo puede volver a ingresar.'
+  )
+
+  setAlumno(null)
+  setComision(null)
+  setDocente(null)
+  setNota(null)
+  setHabilitado(false)
+
+  return
+
+}
+
+setAlumno(alumnoData)
+
+    // Buscar comisión
+    const { data: comisionData } = await supabase
+      .from('comisiones')
+      .select('*')
+      .eq('id', alumnoData.comision_id)
+      .single()
+
+    if(comisionData){
+
+      setComision(comisionData)
+
+      // Buscar docente
+      const { data: docenteData } = await supabase
+        .from('docentes')
+        .select('*')
+        .eq('id', comisionData.docente_id)
+        .single()
+
+      if(docenteData){
+        setDocente(docenteData)
+      }
+
+    }
+
+    // Buscar notas
+    const { data: notaData } = await supabase
+      .from('notas')
+      .select('*')
+      .eq('alumno_id', alumnoData.id)
+      .single()
+
+    if(notaData){
+
+      setNota(notaData)
+
+      const p1 = Number(notaData.parcial1)
+      const p2 = Number(notaData.parcial2)
+
+      if(!isNaN(p1) && !isNaN(p2)){
+
+        const suma = p1 + p2
+
+        if(suma >= 8 && suma <= 12){
+          setHabilitado(true)
+        }
+
+      }
+
+    }
+
+  }
+
+  const comenzarExamen = () => {
+
+    router.push(`/examen?id=${alumno.id}`)
+
+  }
+
+  return(
+    <div style={container}>
+
+      <div style={cardPrincipal}>
+
+        <h1 style={titulo}>
+          Examen Final de Análisis Matemático I
+        </h1>
+
+        <h2 style={subtitulo}>
+          <strong>Cátedra: Vázquez Magnani</strong>
+        </h2>
+
+        <p style={label}>
+          Ingrese su DNI
+        </p>
+
+        <input
+          type="text"
+          placeholder="DNI"
+          value={dni}
+          onChange={(e)=>setDni(e.target.value)}
+          style={input}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        <button
+          onClick={continuar}
+          style={boton}
+        >
+          Continuar
+        </button>
+
+        {alumno && (
+
+          <div style={card}>
+
+            <p>
+              <b>Apellido:</b> {alumno.apellido}
+            </p>
+
+            <p>
+              <b>Nombre:</b> {alumno.nombre}
+            </p>
+
+            <p>
+              <b>Comisión:</b> {comision?.nombre}
+            </p>
+
+            <p>
+              <b>Docente:</b>{' '}
+              {docente
+                ? `${docente.apellido}, ${docente.nombre}`
+                : '-'}
+            </p>
+
+            <hr style={{margin:'20px 0'}} />
+
+            <p>
+              <b>Primer Parcial:</b>{' '}
+              {nota?.parcial1 ?? '-'}
+            </p>
+
+            <p>
+              <b>Segundo Parcial:</b>{' '}
+              {nota?.parcial2 ?? '-'}
+            </p>
+
+            <p>
+              <b>Suma:</b>{' '}
+
+              {
+
+                nota &&
+                !isNaN(Number(nota.parcial1)) &&
+                !isNaN(Number(nota.parcial2))
+
+                ?
+
+                Number(nota.parcial1) +
+                Number(nota.parcial2)
+
+                :
+
+                '-'
+
+              }
+
+            </p>
+
+            {
+
+              habilitado
+
+              ?
+
+              <button
+                onClick={comenzarExamen}
+                style={{
+                  ...boton,
+                  marginTop:'25px',
+                  background:'#16a34a'
+                }}
+              >
+                Comenzar examen
+              </button>
+
+              :
+
+              <div
+                style={{
+                  marginTop:'25px',
+                  padding:'15px',
+                  background:'#fee2e2',
+                  border:'1px solid #ef4444',
+                  borderRadius:'8px',
+                  color:'#991b1b',
+                  fontWeight:'bold'
+                }}
+              >
+                Usted no reúne las condiciones para rendir el examen final.
+              </div>
+
+            }
+
+          </div>
+
+        )}
+
+      </div>
+
     </div>
-  );
+
+  )
+
+}
+const container = {
+  display:'flex',
+  justifyContent:'center',
+  alignItems:'center',
+  minHeight:'100vh',
+  padding:'20px',
+  background:'linear-gradient(135deg,#2563eb,#0f172a)',
+  boxSizing:'border-box' as const
+}
+
+const cardPrincipal = {
+  width:'100%',
+  maxWidth:'700px',
+  background:'white',
+  padding:'40px',
+  borderRadius:'15px',
+  boxShadow:'0 10px 35px rgba(0,0,0,0.25)',
+  boxSizing:'border-box' as const
+}
+
+const titulo = {
+  fontSize:'34px',
+  textAlign:'center' as const,
+  marginBottom:'10px',
+  color:'#0f172a'
+}
+
+const subtitulo = {
+  textAlign:'center' as const,
+  marginBottom:'35px',
+  fontSize:'24px',
+  color:'#1e293b'
+}
+
+const label = {
+  fontWeight:'bold' as const,
+  marginBottom:'8px',
+  fontSize:'17px',
+  color:'#334155'
+}
+
+const input = {
+  width:'100%',
+  padding:'14px',
+  fontSize:'18px',
+  border:'1px solid #cbd5e1',
+  borderRadius:'8px',
+  marginBottom:'20px',
+  boxSizing:'border-box' as const,
+  outline:'none'
+}
+
+const boton = {
+  width:'100%',
+  padding:'14px',
+  background:'#2563eb',
+  color:'white',
+  border:'none',
+  borderRadius:'8px',
+  fontSize:'18px',
+  fontWeight:'bold' as const,
+  cursor:'pointer'
+}
+
+const card = {
+  marginTop:'30px',
+  padding:'25px',
+  background:'#f8fafc',
+  borderRadius:'10px',
+  border:'1px solid #cbd5e1',
+  lineHeight:'2',
+  fontSize:'17px'
 }
