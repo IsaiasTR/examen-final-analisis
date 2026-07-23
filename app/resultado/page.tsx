@@ -1,16 +1,19 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
 import { jsPDF } from 'jspdf'
 
 
-export default function ResultadoPage(){
+function ResultadoContenido(){
+
 
   const searchParams = useSearchParams()
 
+
   const alumnoId = searchParams.get('id')
+
 
   const [alumno,setAlumno] = useState<any>(null)
 
@@ -33,8 +36,6 @@ export default function ResultadoPage(){
   async function cargarDatos(){
 
 
-    // Buscar alumno
-
     const {data: alumnoData} = await supabase
 
       .from('alumnos')
@@ -46,11 +47,10 @@ export default function ResultadoPage(){
       .single()
 
 
+
     setAlumno(alumnoData)
 
 
-
-    // Buscar examen
 
     const {data: examenData,error} = await supabase
 
@@ -82,9 +82,6 @@ export default function ResultadoPage(){
 
     setResultado(examenData)
 
-
-
-    // Buscar respuestas incorrectas
 
 
     const {data: respuestasData,error:errorRespuestas}=await supabase
@@ -141,207 +138,339 @@ export default function ResultadoPage(){
   }
 
 
-function descargarPDF() {
 
-  const doc = new jsPDF()
+  function descargarPDF(){
 
-  let y = 20
 
-  // ---------- ENCABEZADO ----------
+    const doc = new jsPDF()
 
-  doc.setTextColor(0, 51, 153)
-  doc.setFontSize(18)
-  doc.text('CICLO BÁSICO COMÚN - UNIVERSIDAD DE BUENOS AIRES', 20, y)
 
-  y += 10
+    let y = 20
 
-  doc.setFontSize(15)
-  doc.text('Análisis Matemático I - Cátedra : Vázquez Magnani', 20, y)
 
-  y += 10
+    doc.setTextColor(0,51,153)
 
-  doc.setFontSize(16)
-  doc.text('RESULTADOS DEL EXAMEN FINAL', 20, y)
-
-  y += 15
-
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(12)
-
-  doc.text(`Alumno: ${alumno?.apellido}, ${alumno?.nombre}`, 20, y)
-  y += 8
-
-  doc.text(`DNI: ${alumno?.dni}`, 20, y)
-  y += 8
-
-  doc.text(`Tema: ${resultado?.tema}`, 20, y)
-  y += 8
-
-  doc.text(
-    `Fecha: ${new Date(resultado?.fecha).toLocaleDateString()}`,
-    20,
-    y
-  )
-  y += 8
-
-  doc.text(`Nota obtenida: ${resultado?.nota}`, 20, y)
-  y += 8
-
-  doc.text(`Correctas: ${resultado?.correctas}`, 20, y)
-  y += 8
-
-  doc.text(`Incorrectas: ${resultado?.incorrectas}`, 20, y)
-  y += 8
-
-  doc.text(`Sin responder: ${resultado?.sin_responder}`, 20, y)
-
-  y += 15
-
-  // ---------- PREGUNTAS ----------
-
-  errores.forEach((error: any) => {
-
-    const p = error.preguntas_examen
-
-    // Convertir letra elegida al texto correspondiente
-
-    let textoAlumno = ''
-
-    switch (error.respuesta_alumno) {
-      case 'A':
-        textoAlumno = p.opcion_a
-        break
-      case 'B':
-        textoAlumno = p.opcion_b
-        break
-      case 'C':
-        textoAlumno = p.opcion_c
-        break
-      case 'D':
-        textoAlumno = p.opcion_d
-        break
-    }
-
-    // Convertir respuesta correcta al texto
-
-    let textoCorrecto = ''
-
-    switch (p.respuesta_correcta) {
-      case 'A':
-        textoCorrecto = p.opcion_a
-        break
-      case 'B':
-        textoCorrecto = p.opcion_b
-        break
-      case 'C':
-        textoCorrecto = p.opcion_c
-        break
-      case 'D':
-        textoCorrecto = p.opcion_d
-        break
-    }
-
-    // Calcular altura aproximada
-
-    const lineasPregunta =
-      doc.splitTextToSize(p.enunciado, 165)
-
-    const lineasAlumno =
-      doc.splitTextToSize(textoAlumno, 155)
-
-    const lineasCorrecta =
-      doc.splitTextToSize(textoCorrecto, 155)
-
-    const alto =
-      35 +
-      lineasPregunta.length * 6 +
-      lineasAlumno.length * 6 +
-      lineasCorrecta.length * 6
-
-    if (y + alto > 280) {
-      doc.addPage()
-      y = 20
-    }
-
-    // Recuadro
-
-    doc.setDrawColor(180)
-    doc.roundedRect(15, y - 5, 180, alto, 3, 3)
-
-    // Número
-
-    doc.setFontSize(13)
-    doc.setTextColor(0, 51, 153)
+    doc.setFontSize(18)
 
     doc.text(
-      `Pregunta ${p.numero}`,
-      20,
-      y + 5
-    )
-
-    y += 13
-
-    // Enunciado
-
-    doc.setFontSize(11)
-    doc.setTextColor(0, 0, 0)
-
-    doc.text(
-      lineasPregunta,
+      'CICLO BÁSICO COMÚN - UNIVERSIDAD DE BUENOS AIRES',
       20,
       y
     )
 
-    y += lineasPregunta.length * 6 + 4
 
-    // Respuesta alumno
+    y += 10
 
-    doc.setTextColor(220, 38, 38)
+
+    doc.setFontSize(15)
 
     doc.text(
-      '✗ Respuesta del alumno',
+      'Análisis Matemático I - Cátedra : Vázquez Magnani',
       20,
       y
     )
 
-    y += 6
+
+    y += 10
+
+
+    doc.setFontSize(16)
 
     doc.text(
-      lineasAlumno,
-      28,
-      y
-    )
-
-    y += lineasAlumno.length * 6 + 5
-
-    // Correcta
-
-    doc.setTextColor(22, 163, 74)
-
-    doc.text(
-      '✓ Respuesta correcta',
+      'RESULTADOS DEL EXAMEN FINAL',
       20,
       y
     )
 
-    y += 6
+
+    y += 15
+
+
+    doc.setTextColor(0,0,0)
+
+    doc.setFontSize(12)
+
 
     doc.text(
-      lineasCorrecta,
-      28,
+      `Alumno: ${alumno?.apellido}, ${alumno?.nombre}`,
+      20,
       y
     )
 
-    y += lineasCorrecta.length * 6 + 15
+    y += 8
 
-  })
 
-  doc.save(
-    `Revision_examen_${alumno?.dni}.pdf`
-  )
+    doc.text(
+      `DNI: ${alumno?.dni}`,
+      20,
+      y
+    )
 
-}
+    y += 8
+
+
+    doc.text(
+      `Tema: ${resultado?.tema}`,
+      20,
+      y
+    )
+
+    y += 8
+
+
+    doc.text(
+      `Nota obtenida: ${resultado?.nota}`,
+      20,
+      y
+    )
+
+    y += 8
+
+
+    doc.text(
+      `Correctas: ${resultado?.correctas}`,
+      20,
+      y
+    )
+
+    y += 8
+
+
+    doc.text(
+      `Incorrectas: ${resultado?.incorrectas}`,
+      20,
+      y
+    )
+
+    y += 8
+
+
+    doc.text(
+      `Sin responder: ${resultado?.sin_responder}`,
+      20,
+      y
+    )
+
+
+    y += 15
+
+    errores.forEach((error:any)=>{
+
+
+      const p = error.preguntas_examen
+
+
+      let textoAlumno = ''
+
+
+      switch(error.respuesta_alumno){
+
+        case 'A':
+          textoAlumno = p.opcion_a
+          break
+
+        case 'B':
+          textoAlumno = p.opcion_b
+          break
+
+        case 'C':
+          textoAlumno = p.opcion_c
+          break
+
+        case 'D':
+          textoAlumno = p.opcion_d
+          break
+
+      }
+
+
+
+      let textoCorrecto = ''
+
+
+      switch(p.respuesta_correcta){
+
+        case 'A':
+          textoCorrecto = p.opcion_a
+          break
+
+        case 'B':
+          textoCorrecto = p.opcion_b
+          break
+
+        case 'C':
+          textoCorrecto = p.opcion_c
+          break
+
+        case 'D':
+          textoCorrecto = p.opcion_d
+          break
+
+      }
+
+
+
+      const lineasPregunta =
+        doc.splitTextToSize(
+          p.enunciado,
+          165
+        )
+
+
+      const lineasAlumno =
+        doc.splitTextToSize(
+          textoAlumno,
+          155
+        )
+
+
+      const lineasCorrecta =
+        doc.splitTextToSize(
+          textoCorrecto,
+          155
+        )
+
+
+
+      const alto =
+        35 +
+        lineasPregunta.length * 6 +
+        lineasAlumno.length * 6 +
+        lineasCorrecta.length * 6
+
+
+
+      if(y + alto > 280){
+
+        doc.addPage()
+
+        y = 20
+
+      }
+
+
+
+      doc.setDrawColor(180)
+
+
+      doc.roundedRect(
+        15,
+        y - 5,
+        180,
+        alto,
+        3,
+        3
+      )
+
+
+
+      doc.setFontSize(13)
+
+      doc.setTextColor(0,51,153)
+
+
+      doc.text(
+        `Pregunta ${p.numero}`,
+        20,
+        y + 5
+      )
+
+
+
+      y += 13
+
+
+
+      doc.setFontSize(11)
+
+      doc.setTextColor(0,0,0)
+
+
+
+      doc.text(
+        lineasPregunta,
+        20,
+        y
+      )
+
+
+
+      y += lineasPregunta.length * 6 + 4
+
+
+
+      doc.setTextColor(220,38,38)
+
+
+
+      doc.text(
+        '✗ Respuesta del alumno',
+        20,
+        y
+      )
+
+
+
+      y += 6
+
+
+
+      doc.text(
+        lineasAlumno,
+        28,
+        y
+      )
+
+
+
+      y += lineasAlumno.length * 6 + 5
+
+
+
+      doc.setTextColor(22,163,74)
+
+
+
+      doc.text(
+        '✓ Respuesta correcta',
+        20,
+        y
+      )
+
+
+
+      y += 6
+
+
+
+      doc.text(
+        lineasCorrecta,
+        28,
+        y
+      )
+
+
+
+      y += lineasCorrecta.length * 6 + 15
+
+
+    })
+
+
+
+    doc.save(
+
+      `Revision_examen_${alumno?.dni}.pdf`
+
+    )
+
+
+  }
+
+
+
   if(cargando){
+
 
     return(
 
@@ -363,8 +492,6 @@ function descargarPDF() {
 
     <>
 
-      {/* PANTALLA DEL ALUMNO */}
-
       <div style={container}>
 
 
@@ -372,7 +499,9 @@ function descargarPDF() {
 
 
           <h1 style={titulo}>
+
             Resultado del Examen Final
+
           </h1>
 
 
@@ -399,10 +528,7 @@ function descargarPDF() {
           </p>
 
 
-
           <hr style={{margin:'25px 0'}}/>
-
-
 
           <p>
             <b>Correctas:</b> {resultado?.correctas}
@@ -425,11 +551,17 @@ function descargarPDF() {
 
 
           <p
+
             style={{
+
               fontSize:'28px',
+
               fontWeight:'bold',
+
               textAlign:'center'
+
             }}
+
           >
 
             Nota: {resultado?.nota}
@@ -469,11 +601,13 @@ function descargarPDF() {
           >
 
             {
+
               resultado?.aprobado
 
               ? 'APROBADO'
 
               : 'DESAPROBADO'
+
             }
 
 
@@ -482,6 +616,7 @@ function descargarPDF() {
 
 
           {
+
             resultado?.nota === 2 && (
 
 
@@ -500,11 +635,13 @@ function descargarPDF() {
 
 
             )
+
           }
 
 
 
         </div>
+
 
       </div>
 
@@ -513,10 +650,45 @@ function descargarPDF() {
 
   )
 
+
 }
 
 
 
+export default function ResultadoPage(){
+
+
+  return(
+
+
+    <Suspense
+
+      fallback={
+
+        <div style={container}>
+
+          <h2>
+
+            Cargando resultado...
+
+          </h2>
+
+        </div>
+
+      }
+
+    >
+
+      <ResultadoContenido />
+
+
+    </Suspense>
+
+
+  )
+
+
+}
 
 const container = {
 
