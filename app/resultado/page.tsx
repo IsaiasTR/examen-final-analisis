@@ -27,9 +27,20 @@ function ResultadoContenido(){
 
   useEffect(()=>{
 
-    cargarDatos()
+  cargarDatos()
 
-  },[])
+  const tiempoCierre = setTimeout(()=>{
+
+    alert('La sesión del examen ha finalizado.')
+
+    window.location.href = '/'
+
+  },60000) // 60000 milisegundos = 1 minuto
+
+
+  return () => clearTimeout(tiempoCierre)
+
+ },[])
 
 
 
