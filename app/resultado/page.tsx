@@ -159,14 +159,13 @@ function ResultadoContenido(){
     let y = 20
 
 
-    doc.setTextColor(0,51,153)
-
+    doc.setTextColor(0, 51, 153)
     doc.setFontSize(18)
-
     doc.text(
-      'CICLO BÁSICO COMÚN - UNIVERSIDAD DE BUENOS AIRES',
-      20,
-      y
+    'CICLO BÁSICO COMÚN - UNIVERSIDAD DE BUENOS AIRES',
+     105,
+     y,
+    { align: 'center' }
     )
 
 
@@ -174,23 +173,25 @@ function ResultadoContenido(){
 
 
     doc.setFontSize(15)
-
     doc.text(
-      'Análisis Matemático I - Cátedra : Vázquez Magnani',
-      20,
-      y
+    'Análisis Matemático I - Cátedra: Vázquez Magnani',
+     105,
+     y,
+    { align: 'center' }
     )
 
 
     y += 10
 
 
-    doc.setFontSize(16)
+    doc.setFontSize(17)
+    doc.setTextColor(0,0,0)
 
     doc.text(
-      'RESULTADOS DEL EXAMEN FINAL',
-      20,
-      y
+    'RESULTADOS DEL EXAMEN FINAL',
+    105,
+    y,
+    { align: 'center' }
     )
 
 
@@ -222,15 +223,6 @@ function ResultadoContenido(){
 
     doc.text(
       `Tema: ${resultado?.tema}`,
-      20,
-      y
-    )
-
-    y += 8
-
-
-    doc.text(
-      `Nota obtenida: ${resultado?.nota}`,
       20,
       y
     )
@@ -479,6 +471,33 @@ function ResultadoContenido(){
     })
 
 
+    // ----------------------------
+    // NOTA FINAL
+    // ----------------------------
+
+   if (y > 250) {
+     doc.addPage()
+     y = 30
+   }
+
+   doc.setFontSize(22)
+
+   if (resultado?.nota >= 4) {
+
+     doc.setTextColor(22,163,74) // Verde
+
+    } else {
+
+     doc.setTextColor(220,38,38) // Rojo
+
+    }
+
+   doc.text(
+     `NOTA: ${resultado?.nota}`,
+      105,
+      y + 10,
+      { align: 'center' }
+   )
 
     doc.save(
 
