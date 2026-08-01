@@ -265,6 +265,17 @@ function ResultadoContenido(){
 
     y += 15
 
+
+   // Si aprobó, generar un PDF resumido
+
+    if(resultado?.nota >= 4){
+
+      doc.save(`Resultado_${alumno?.dni}.pdf`)
+
+      return
+
+     }
+
     errores.forEach((error:any)=>{
 
 
@@ -626,28 +637,17 @@ function ResultadoContenido(){
 
 
 
-          {
+          <button
 
-            resultado?.nota === 2 && (
+            onClick={descargarPDF}
 
+            style={botonPdf}
 
-              <button
+           >
 
-                onClick={descargarPDF}
+            📄 Descargar PDF
 
-                style={botonPdf}
-
-              >
-
-                📄 Descargar revisión del examen (PDF)
-
-
-              </button>
-
-
-            )
-
-          }
+           </button>
 
 
 
