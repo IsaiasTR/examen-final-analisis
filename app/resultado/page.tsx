@@ -260,13 +260,67 @@ function ResultadoContenido(){
 
    // Si aprobó, generar un PDF resumido
 
-    if(resultado?.nota >= 4){
+   // =======================================
+   // PDF PARA APROBADOS
+   // =======================================
 
-      doc.save(`Resultado_${alumno?.dni}.pdf`)
+    if (resultado?.nota >= 4) {
 
-      return
+       y += 15
 
-     }
+       // Línea superior
+       doc.setDrawColor(180)
+       doc.line(20, y, 190, y)
+
+       y += 18
+
+      // Título
+      doc.setFontSize(18)
+      doc.setTextColor(0, 0, 0)
+
+      doc.text(
+      "NOTA",
+       105,
+       y,
+      { align: "center" }
+      )
+
+      y += 22
+
+     // Número grande
+     doc.setFontSize(42)
+     doc.setTextColor(22, 163, 74)
+
+     doc.text(
+      `${resultado?.nota}`,
+       105,
+       y,
+      { align: "center" }
+     )
+
+     y += 20
+
+     // Estado
+     doc.setFontSize(22)
+
+     doc.text(
+      "APROBADO",
+      105,
+      y,
+     { align: "center" }
+     )
+
+     y += 12
+
+     // Línea inferior
+     doc.setDrawColor(180)
+     doc.line(20, y, 190, y)
+
+     doc.save(`Resultado_${alumno?.dni}.pdf`)
+
+     return
+
+   }
 
     errores.forEach((error:any)=>{
 
@@ -471,33 +525,62 @@ function ResultadoContenido(){
     })
 
 
-    // ----------------------------
-    // NOTA FINAL
-    // ----------------------------
+    // =======================================
+    // NOTA FINAL (DESAPROBADOS)
+    // =======================================
 
-   if (y > 250) {
-     doc.addPage()
-     y = 30
+   if (y > 240) {
+    doc.addPage()
+    y = 30
    }
 
-   doc.setFontSize(22)
+   // Línea superior
+    doc.setDrawColor(180)
+    doc.line(20, y, 190, y)
 
-   if (resultado?.nota >= 4) {
+    y += 18
 
-     doc.setTextColor(22,163,74) // Verde
+    // Título
+    doc.setFontSize(18)
+    doc.setTextColor(0, 0, 0)
 
-    } else {
+    doc.text(
+    "NOTA",
+     105,
+     y,
+    { align: "center" }
+    )
 
-     doc.setTextColor(220,38,38) // Rojo
+    y += 22
 
-    }
+    // Número grande
+    doc.setFontSize(42)
+    doc.setTextColor(220, 38, 38)
 
-   doc.text(
-     `NOTA: ${resultado?.nota}`,
-      105,
-      y + 10,
-      { align: 'center' }
-   )
+    doc.text(
+    `${resultado?.nota}`,
+     105,
+     y,
+    { align: "center" }
+    )
+
+    y += 20
+
+    // Estado
+    doc.setFontSize(22)
+
+    doc.text(
+    "DESAPROBADO",
+    105,
+    y,
+    { align: "center" }
+    )
+
+    y += 12
+
+    // Línea inferior
+    doc.setDrawColor(180)
+    doc.line(20, y, 190, y)
 
     doc.save(
 
